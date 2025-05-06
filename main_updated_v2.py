@@ -226,11 +226,12 @@ def help_menu():
         clock.tick(FPS)
 
 def game_loop():
+    apply_difficulty()
     select_rocket()
     countdown()
     # pygame.mixer.music.load("game_music.mp3")
     # pygame.mixer.music.play(-1)
-    paddle = pygame.Rect(WIDTH // 2 - 60, HEIGHT - 30, 120, 15)
+    paddle = selected_rocket_img.get_rect(midbottom=(WIDTH // 2, HEIGHT - 10))
     paddle_speed = 8
     ball = pygame.Rect(WIDTH // 2, HEIGHT // 2, 15, 15)
     ball_speed = [5, -5]
@@ -280,10 +281,12 @@ def game_loop():
         for block in blocks[:]:
             if ball.colliderect(block):
                 blocks.remove(block)
+            if random.random() < 0.25:
+                bonuses.append({'type': random.choice(bonus_types), 'rect': pygame.Rect(block.x, block.y, 20, 20)})
                 ball_speed[1] *= -1
                 score += 10
                 break
-        pygame.draw.rect(screen, PADDLE_COLOR, paddle)
+        screen.blit(selected_rocket_img, paddle)
         pygame.draw.ellipse(screen, BALL_COLOR, ball)
         for block in blocks:
             pygame.draw.rect(screen, BLOCK_COLOR, block)
@@ -300,6 +303,8 @@ def game_loop():
             return
         pygame.display.flip()
 
+
+# Загрузка изображений ракет (временно — цветные прямоугольники)
 rocket_imgs = [
     pygame.Surface((80, 30)),  # Ракета 1
     pygame.Surface((100, 20)),  # Ракета 2
@@ -311,12 +316,10 @@ rocket_imgs[2].fill((100, 100, 255))   # синяя
 
 selected_rocket_img = rocket_imgs[0]  # по умолчанию
 
-
 def select_rocket():
     global selected_rocket_img
     selecting = True
     selected = 0
-    rocket_rects = []  # Список для хранения прямоугольников ракет
 
     while selecting:
         screen.fill(BG_COLOR)
@@ -328,37 +331,29 @@ def select_rocket():
         title = font.render("SELECT YOUR ROCKET", True, WHITE)
         screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 80))
 
-        rocket_rects = []  # Очищаем список каждый кадр
         for i, rocket in enumerate(rocket_imgs):
             x = WIDTH // 2 - 150 + i * 100
             y = HEIGHT // 2
-            rocket_rect = pygame.Rect(x, y, rocket.get_width(), rocket.get_height())
-            rocket_rects.append(rocket_rect)
-
-            # Определяем цвет рамки (желтый для выбранной, серый для остальных)
-            mouse_pos = pygame.mouse.get_pos()
-            border_color = (255, 255, 0) if rocket_rect.collidepoint(mouse_pos) else (100, 100, 100)
-
+            border_color = (255, 255, 0) if i == selected else (100, 100, 100)
             pygame.draw.rect(screen, border_color, (x - 5, y - 5, rocket.get_width() + 10, rocket.get_height() + 10), 2)
             screen.blit(rocket, (x, y))
 
-        instruction = font.render("Click on rocket to select", True, WHITE)
+        instruction = font.render("Use LEFT / RIGHT, Enter to select", True, WHITE)
         screen.blit(instruction, (WIDTH // 2 - instruction.get_width() // 2, HEIGHT - 80))
 
         pygame.display.flip()
-
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 1:  # Левая кнопка мыши
-                    mouse_pos = pygame.mouse.get_pos()
-                    for i, rect in enumerate(rocket_rects):
-                        if rect.collidepoint(mouse_pos):
-                            selected_rocket_img = rocket_imgs[i]
-                            selecting = False
-                            return
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT:
+                    selected = (selected - 1) % 3
+                elif event.key == pygame.K_RIGHT:
+                    selected = (selected + 1) % 3
+                elif event.key == pygame.K_RETURN:
+                    selected_rocket_img = rocket_imgs[selected]
+                    selecting = False
 
         clock.tick(60)
 
@@ -376,6 +371,21 @@ def countdown():
         pygame.time.wait(1000)
 
 
+# --- НАСТРОЙКА СЛОЖНОСТИ ---
+difficulty = "Normal"  # Easy / Normal / Hard
+
+def apply_difficulty():
+    global ball_speed, selected_rocket_img, paddle_speed
+    if difficulty == "Easy":
+        ball_speed[:] = [3, -3]
+        selected_rocket_img = rocket_imgs[0]  # широкая
+    elif difficulty == "Normal":
+        ball_speed[:] = [5, -5]
+        selected_rocket_img = rocket_imgs[1]
+    elif difficulty == "Hard":
+        ball_speed[:] = [7, -7]
+        selected_rocket_img = rocket_imgs[2]  # узкая
+
 def main():
     while True:
         action = main_menu()
@@ -388,8 +398,6 @@ def main():
         elif action == "quit":
             pygame.quit()
             return
-
-
 
 if __name__ == "__main__":
     main()
