@@ -4,11 +4,11 @@
     "losses": 0
   },
   "normal": {
-    "wins": 0,
-    "losses": 2
+    "wins": 1,
+    "losses": 6
   },
   "hard": {
     "wins": 0,
-    "losses": 3
+    "losses": 4
   }
 }

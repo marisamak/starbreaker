@@ -50,6 +50,36 @@ game_settings = {
 for sound in [bounce_sound, break_sound, hover_sound, lose_sound, win_sound, fail_sound]:
     sound.set_volume(game_settings["volume"])
 
+# Меню
+main_menu_buttons = [
+    {"text": "Начать игру", "action": "start"},
+    {"text": "Настройки", "action": "settings"},
+    {"text": "Статистика", "action": "stats"},
+    {"text": "Помощь", "action": "help"},
+    {"text": "Выоход", "action": "quit"}
+]
+
+settings_buttons = [
+    {"text": "Музыка: Включена", "action": "toggle_music", "type": "toggle", "value": "music"},
+    {"text": "Звуки: Включены", "action": "toggle_sound", "type": "toggle", "value": "sound"},
+    {"text": "Громкость: 70%", "action": "volume", "type": "slider", "value": "volume"},
+    {"text": "Сложность: Normal", "action": "difficulty", "type": "selector",
+     "options": ["Легкий уровень", "Средний уровень", "Трудный уровень"], "value": "difficulty"},
+    {"text": "Назад", "action": "back"}
+]
+
+help_text = [
+    "Правила игры:",
+    "- Используйте для передвижения стрелки на клавиатуре: ← →",
+    "- Разбей все преграды, чтобы выиграть",
+    "- Не дайте снаряду упасть",
+    "- Нажмите кнопку ESC для паузы",
+    "",
+    "Элементы управления:",
+    "- ESC: Пауза/Продолжение игры",
+    "- F1: Показать инструкцию по работе"
+]
+
 # Звезды
 class Star:
     def __init__(self):
@@ -59,11 +89,13 @@ class Star:
         self.speed = random.uniform(0.5, 2.5)  # Разные скорости для глубины
         self.color = (random.randint(200, 255),) * 3  # Более яркие звезды
 
+
     def move(self):
         self.y += self.speed
         if self.y > HEIGHT:
             self.y = 0
             self.x = random.randint(0, WIDTH)
+
 
     def draw(self, surface):
         pygame.draw.circle(surface, self.color, (int(self.x), int(self.y)), self.radius)
@@ -90,35 +122,6 @@ def save_stats(stats):
 
 stats = load_stats()
 
-# Меню
-main_menu_buttons = [
-    {"text": "Start Game", "action": "start"},
-    {"text": "Settings", "action": "settings"},
-    {"text": "Stats", "action": "stats"},
-    {"text": "Help", "action": "help"},
-    {"text": "Quit", "action": "quit"}
-]
-
-settings_buttons = [
-    {"text": "Music: ON", "action": "toggle_music", "type": "toggle", "value": "music"},
-    {"text": "Sounds: ON", "action": "toggle_sound", "type": "toggle", "value": "sound"},
-    {"text": "Volume: 70%", "action": "volume", "type": "slider", "value": "volume"},
-    {"text": "Difficulty: Normal", "action": "difficulty", "type": "selector",
-     "options": ["Easy", "Normal", "Hard"], "value": "difficulty"},
-    {"text": "Back", "action": "back"}
-]
-
-help_text = [
-    "HOW TO PLAY:",
-    "- Use LEFT/RIGHT arrows to move paddle",
-    "- Destroy all blocks to win",
-    "- Don't let the ball fall down",
-    "- Press ESC to pause game",
-    "",
-    "CONTROLS:",
-    "- ESC: Pause/Resume",
-    "- F1: Show this help"
-]
 
 def draw_button(btn, x, y, width=300, height=50, is_hovered=False, is_active=False):
     btn_rect = pygame.Rect(x, y, width, height)
@@ -149,7 +152,7 @@ def main_menu():
         for star in stars:
             star.move()
             star.draw(screen)
-        title = title_font.render("StarBreaker", True, WHITE)
+        title = title_font.render("Звездный удар", True, WHITE)
         screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 100))
 
         mouse_pos = pygame.mouse.get_pos()
@@ -184,7 +187,7 @@ def settings_menu():
             star.move()
             star.draw(screen)
 
-        title = title_font.render("Settings", True, WHITE)
+        title = title_font.render("Настройки", True, WHITE)
         screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 80))
 
         mouse_pos = pygame.mouse.get_pos()
@@ -193,11 +196,11 @@ def settings_menu():
         for i, btn in enumerate(settings_buttons):
             y_pos = 180 + i * 70
             if btn.get("type") == "toggle":
-                btn["text"] = f"{btn['value'].capitalize()}: {'ON' if game_settings[btn['value']] else 'OFF'}"
+                btn["text"] = f"{btn['value'].capitalize()}: {'Включена' if game_settings[btn['value']] else 'Выключена'}"
                 btn["rect"] = draw_button(btn, WIDTH // 2 - 150, y_pos, 300, 50,
                                            btn.get("rect", pygame.Rect(0, 0, 0, 0)).collidepoint(mouse_pos))
             elif btn.get("type") == "slider":
-                btn["text"] = f"Volume: {int(game_settings['volume'] * 100)}%"
+                btn["text"] = f"Громкость: {int(game_settings['volume'] * 100)}%"
                 label = font.render(btn["text"], True, WHITE)
                 screen.blit(label, (WIDTH // 2 - label.get_width() // 2, y_pos - 10))
                 slider_rect = draw_slider(WIDTH // 2 - 150, y_pos + 20, 300, game_settings["volume"])
@@ -214,7 +217,7 @@ def settings_menu():
                 elif not mouse_pressed:
                     dragging = None
             elif btn.get("type") == "selector":
-                btn["text"] = f"Difficulty: {game_settings['difficulty'].capitalize()}"
+                btn["text"] = f"Сложность: {game_settings['difficulty'].capitalize()}"
                 btn["rect"] = draw_button(btn, WIDTH // 2 - 150, y_pos, 300, 50,
                                            btn.get("rect", pygame.Rect(0, 0, 0, 0)).collidepoint(mouse_pos))
             else:
@@ -256,12 +259,12 @@ def stats_menu():
             star.move()
             star.draw(screen)
 
-        title = title_font.render("STATS", True, WHITE)
+        title = title_font.render("Статистика", True, WHITE)
         screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 80))
 
         y = 180
-        for level in ["Easy", "Normal", "Hard"]:
-            line = f"{level}: Wins: {stats[level.lower()]['wins']} | Losses: {stats[level.lower()]['losses']}"
+        for level in ["Легкий уровень", "Нормальный уровень", "Трудный уровень"]:
+            line = f"{level}: Победы: {stats[level.lower()]['wins']} | Поражения: {stats[level.lower()]['losses']}"
             line_surf = font.render(line, True, WHITE)
             screen.blit(line_surf, (WIDTH // 2 - line_surf.get_width() // 2, y))
             y += 50
@@ -296,7 +299,7 @@ def help_menu():
             star.move()
             star.draw(screen)
 
-        title = title_font.render("Help", True, WHITE)
+        title = title_font.render("Помощь", True, WHITE)
         screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 80))
 
         for i, line in enumerate(help_text):
@@ -325,17 +328,19 @@ def help_menu():
 
 # Ракеты (временно — цветные прямоугольники)
 rocket_imgs = [
-    pygame.Surface((100, 30)),  # Easy - широкая
-    pygame.Surface((80, 25)),  # Normal
-    pygame.Surface((60, 20)),  # Hard - узкая
+    pygame.image.load("rocket_1.png").convert_alpha(),  # Широкая ракета
+    pygame.image.load("rocket_2.png").convert_alpha(),  # Средняя ракета
+    pygame.image.load("rocket_3.png").convert_alpha()  # Узкая ракета
 ]
-rocket_imgs[0].fill((255, 100, 100))  # красная
-rocket_imgs[1].fill((100, 255, 100))  # зелёная
-rocket_imgs[2].fill((100, 100, 255))  # синяя
+
+# Масштабируем изображения к нужному размеру
+rocket_imgs[0] = pygame.transform.scale(rocket_imgs[0], (120, 120))
+rocket_imgs[1] = pygame.transform.scale(rocket_imgs[1], (120, 120))
+rocket_imgs[2] = pygame.transform.scale(rocket_imgs[2], (120, 120))
 
 selected_rocket_img = rocket_imgs[1]  # по умолчанию
 
-# Выбирать при помощи мышки (если что-то неправильно, то эта функция)
+
 def select_rocket():
     global selected_rocket_img
     selecting = True
@@ -354,7 +359,7 @@ def select_rocket():
 
         rocket_rects = []  # Очищаем список каждый кадр
         for i, rocket in enumerate(rocket_imgs):
-            x = WIDTH // 2 - 150 + i * 100
+            x = WIDTH // 2 - 210 + i * 140
             y = HEIGHT // 2
             rocket_rect = pygame.Rect(x, y, rocket.get_width(), rocket.get_height())
             rocket_rects.append(rocket_rect)
@@ -366,7 +371,7 @@ def select_rocket():
             pygame.draw.rect(screen, border_color, (x - 5, y - 5, rocket.get_width() + 10, rocket.get_height() + 10), 2)
             screen.blit(rocket, (x, y))
 
-        instruction = font.render("Click on rocket to select", True, WHITE)
+        instruction = font.render("Выберите ракету", True, WHITE)
         screen.blit(instruction, (WIDTH // 2 - instruction.get_width() // 2, HEIGHT - 80))
 
         pygame.display.flip()
@@ -388,7 +393,7 @@ def select_rocket():
 
 
 def countdown():
-    for i in [3, 2, 1, "START"]:
+    for i in [3, 2, 1, "Поехалии!!"]:
         screen.fill(BG_COLOR)
         screen.blit(galaxy_img, galaxy_pos)
         for star in stars:
