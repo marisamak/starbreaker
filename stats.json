@@ -1,0 +1,14 @@
+{
+  "easy": {
+    "wins": 0,
+    "losses": 0
+  },
+  "normal": {
+    "wins": 0,
+    "losses": 2
+  },
+  "hard": {
+    "wins": 0,
+    "losses": 3
+  }
+}
