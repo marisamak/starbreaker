@@ -24,20 +24,20 @@ font = pygame.font.SysFont("consolas", 24)
 title_font = pygame.font.SysFont("consolas", 64, bold=True)
 
 # Музыка
-pygame.mixer.music.load("menu_music.mp3")
+pygame.mixer.music.load("music/menu-music.mp3")
 pygame.mixer.music.set_volume(0.7)
 pygame.mixer.music.play(-1)
 
-galaxy_img = pygame.image.load("galaxy.png").convert_alpha()
+galaxy_img = pygame.image.load("pictures/galaxy.png").convert_alpha()
 galaxy_img = pygame.transform.scale(galaxy_img, (600, 600))
 galaxy_pos = [0, 0]
 
-bounce_sound = pygame.mixer.Sound("bounce.mp3")
-break_sound = pygame.mixer.Sound("break.mp3")
-hover_sound = pygame.mixer.Sound("hover.mp3")
-lose_sound = pygame.mixer.Sound("fail.mp3")
-win_sound = pygame.mixer.Sound("win.mp3")
-fail_sound = pygame.mixer.Sound("lose.mp3")
+bounce_sound = pygame.mixer.Sound("sounds/bounce.mp3")
+break_sound = pygame.mixer.Sound("sounds/break.mp3")
+hover_sound = pygame.mixer.Sound("sounds/hover.mp3")
+lose_sound = pygame.mixer.Sound("sounds/fail.mp3")
+win_sound = pygame.mixer.Sound("sounds/win.mp3")
+fail_sound = pygame.mixer.Sound("sounds/lose.mp3")
 
 value_labels = {
     "music": "Музыка",
@@ -112,6 +112,8 @@ stars = [Star() for _ in range(100)]
 # Статистика
 stats_file = "stats.json"
 
+ensure_ascii=False
+
 def load_stats():
     default_stats = {
         "Легко": {"побед": 0, "поражений": 0},
@@ -130,8 +132,8 @@ def load_stats():
     return default_stats
 
 def save_stats(stats):
-    with open(stats_file, "w") as f:
-        json.dump(stats, f, indent=2)
+    with open(stats_file, "w", encoding="utf-8") as f:
+        json.dump(stats, f, indent=2, ensure_ascii=False)
 
 stats = load_stats()
 
@@ -342,9 +344,9 @@ def help_menu():
 
 # Ракеты
 rocket_imgs = [
-    pygame.image.load("rocket_1.png").convert_alpha(),
-    pygame.image.load("rocket_2.png").convert_alpha(),
-    pygame.image.load("rocket_3.png").convert_alpha()
+    pygame.image.load("pictures/rocket_1.png").convert_alpha(),
+    pygame.image.load("pictures/rocket_2.png").convert_alpha(),
+    pygame.image.load("pictures/rocket_3.png").convert_alpha()
 ]
 
 rocket_imgs[0] = pygame.transform.scale(rocket_imgs[0], (120, 120))
@@ -438,7 +440,7 @@ def game_loop():
     select_rocket()
     countdown()
 
-    pygame.mixer.music.load("game_music.mp3")
+    pygame.mixer.music.load("music/game_music.mp3")
     pygame.mixer.music.play(-1)
 
     paddle = selected_rocket_img.get_rect(midbottom=(WIDTH // 2, HEIGHT - 10))
@@ -526,6 +528,13 @@ def game_loop():
             screen.blit(msg, (WIDTH // 2 - msg.get_width() // 2, HEIGHT // 2))
             pygame.display.flip()
             pygame.time.wait(3000)
+
+            pygame.mixer.music.stop()
+            pygame.mixer.music.load("music/menu-music.mp3")
+            pygame.mixer.music.set_volume(game_settings["volume"])
+            if game_settings["music"]:
+                pygame.mixer.music.play(-1)
+
             return
         elif not blocks:
             if game_settings["sound"]:
@@ -538,6 +547,13 @@ def game_loop():
             screen.blit(msg, (WIDTH // 2 - msg.get_width() // 2, HEIGHT // 2))
             pygame.display.flip()
             pygame.time.wait(3000)
+
+            pygame.mixer.music.stop()
+            pygame.mixer.music.load("music/menu-music.mp3")
+            pygame.mixer.music.set_volume(game_settings["volume"])
+            if game_settings["music"]:
+                pygame.mixer.music.play(-1)
+
             return
 
         pygame.display.flip()
