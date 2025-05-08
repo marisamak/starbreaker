@@ -44,7 +44,7 @@ game_settings = {
     "music": True,
     "sound": True,
     "volume": 0.7,
-    "difficulty": "normal"
+    "difficulty": "Нормально"
 }
 
 for sound in [bounce_sound, break_sound, hover_sound, lose_sound, win_sound, fail_sound]:
@@ -56,15 +56,15 @@ main_menu_buttons = [
     {"text": "Настройки", "action": "settings"},
     {"text": "Статистика", "action": "stats"},
     {"text": "Помощь", "action": "help"},
-    {"text": "Выоход", "action": "quit"}
+    {"text": "Выход", "action": "quit"}
 ]
 
 settings_buttons = [
     {"text": "Музыка: Включена", "action": "toggle_music", "type": "toggle", "value": "music"},
     {"text": "Звуки: Включены", "action": "toggle_sound", "type": "toggle", "value": "sound"},
     {"text": "Громкость: 70%", "action": "volume", "type": "slider", "value": "volume"},
-    {"text": "Сложность: Normal", "action": "difficulty", "type": "selector",
-     "options": ["Легкий уровень", "Средний уровень", "Трудный уровень"], "value": "difficulty"},
+    {"text": "Сложность: Нормально", "action": "difficulty", "type": "selector",
+     "options": ["Легко", "Нормально", "Трудно"], "value": "difficulty"},
     {"text": "Назад", "action": "back"}
 ]
 
@@ -114,7 +114,7 @@ def load_stats():
     if os.path.exists(stats_file):
         with open(stats_file, "r") as f:
             return json.load(f)
-    return {"Easy": {"wins": 0, "losses": 0}, "Normal": {"wins": 0, "losses": 0}, "Hard": {"wins": 0, "losses": 0}}
+    return {"Легко": {"побед": 0, "поражений": 0}, "Нормально": {"побед": 0, "поражений": 0}, "Трудно": {"побед": 0, "поражений": 0}}
 
 def save_stats(stats):
     with open(stats_file, "w") as f:
@@ -245,7 +245,7 @@ def settings_menu():
                         elif btn["action"] == "toggle_sound":
                             game_settings["sound"] = not game_settings["sound"]
                         elif btn["action"] == "difficulty":
-                            diffs = ["easy", "normal", "hard"]
+                            diffs = ["Легко", "Нормально", "Трудно"]
                             current = diffs.index(game_settings["difficulty"])
                             game_settings["difficulty"] = diffs[(current + 1) % len(diffs)]
         clock.tick(FPS)
@@ -263,14 +263,14 @@ def stats_menu():
         screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 80))
 
         y = 180
-        for level in ["Легкий уровень", "Нормальный уровень", "Трудный уровень"]:
-            line = f"{level}: Победы: {stats[level.lower()]['wins']} | Поражения: {stats[level.lower()]['losses']}"
+        for level in ["Легко", "Нормально", "Трудно"]:
+            line = f"{level}: Победы: {stats[level.lower()]['побед']} | Поражения: {stats[level.lower()]['поражений']}"
             line_surf = font.render(line, True, WHITE)
             screen.blit(line_surf, (WIDTH // 2 - line_surf.get_width() // 2, y))
             y += 50
 
         mouse_pos = pygame.mouse.get_pos()
-        back_btn = {"text": "Back", "action": "back"}
+        back_btn = {"text": "Назад", "action": "back"}
         is_hovered = pygame.Rect(WIDTH // 2 - 150, HEIGHT - 100, 300, 50).collidepoint(mouse_pos)
         back_btn["rect"] = draw_button(back_btn, WIDTH // 2 - 150, HEIGHT - 100, 300, 50, is_hovered)
 
@@ -406,19 +406,19 @@ def countdown():
         pygame.time.wait(1000)
 
 
-difficulty = "Normal"  # Easy / Normal / Hard
+difficulty = "Нормально"  # Easy / Normal / Hard
 
 
 def apply_difficulty():
     global ball_speed, paddle_speed, base_ball_speed
 
-    if game_settings["difficulty"] == "easy":
+    if game_settings["difficulty"] == "Легко":
         base_ball_speed = [3, -3]
         paddle_speed = 6
-    elif game_settings["difficulty"] == "normal":
+    elif game_settings["difficulty"] == "Нормально":
         base_ball_speed = [5, -5]
         paddle_speed = 8
-    elif game_settings["difficulty"] == "hard":
+    elif game_settings["difficulty"] == "Трудно":
         base_ball_speed = [7, -7]
         paddle_speed = 10
 
@@ -532,7 +532,7 @@ def game_loop():
         if lives <= 0:
             if game_settings["sound"]:
                 fail_sound.play()
-            stats[game_settings["difficulty"]]["losses"] += 1
+            stats[game_settings["difficulty"]]["поражений"] += 1
             save_stats(stats)
             end_text = "GAME OVER"
             msg = font.render(end_text, True, WHITE)
@@ -543,7 +543,7 @@ def game_loop():
         elif not blocks:
             if game_settings["sound"]:
                 win_sound.play()
-            stats[game_settings["difficulty"]]["wins"] += 1
+            stats[game_settings["difficulty"]]["побед"] += 1
             save_stats(stats)
             end_text = "YOU WIN!"
             msg = font.render(end_text, True, WHITE)

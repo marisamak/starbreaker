@@ -1,4 +1,3 @@
-# StarBreaker - объединенная версия
 import pygame
 import random
 import sys
@@ -25,15 +24,66 @@ font = pygame.font.SysFont("consolas", 24)
 title_font = pygame.font.SysFont("consolas", 64, bold=True)
 
 # Музыка
-# pygame.mixer.music.load("menu_music.mp3")
-# pygame.mixer.music.set_volume(0.7)
-# pygame.mixer.music.play(-1)
+pygame.mixer.music.load("menu_music.mp3")
+pygame.mixer.music.set_volume(0.7)
+pygame.mixer.music.play(-1)
 
-# Загрузка фона
-galaxy_img = pygame.Surface((600, 600))
-galaxy_img.fill((20, 20, 40))
+galaxy_img = pygame.image.load("galaxy.png").convert_alpha()
+galaxy_img = pygame.transform.scale(galaxy_img, (600, 600))
 galaxy_pos = [0, 0]
 
+bounce_sound = pygame.mixer.Sound("bounce.mp3")
+break_sound = pygame.mixer.Sound("break.mp3")
+hover_sound = pygame.mixer.Sound("hover.mp3")
+lose_sound = pygame.mixer.Sound("fail.mp3")
+win_sound = pygame.mixer.Sound("win.mp3")
+fail_sound = pygame.mixer.Sound("lose.mp3")
+
+value_labels = {
+    "music": "Музыка",
+    "sound": "Звуки"
+}
+
+# Настройки игры
+game_settings = {
+    "music": True,
+    "sound": True,
+    "volume": 0.7,
+    "difficulty": "Нормально"
+}
+
+for sound in [bounce_sound, break_sound, hover_sound, lose_sound, win_sound, fail_sound]:
+    sound.set_volume(game_settings["volume"])
+
+# Меню
+main_menu_buttons = [
+    {"text": "Начать игру", "action": "start"},
+    {"text": "Настройки", "action": "settings"},
+    {"text": "Статистика", "action": "stats"},
+    {"text": "Помощь", "action": "help"},
+    {"text": "Выход", "action": "quit"}
+]
+
+settings_buttons = [
+    {"text": "Музыка: ON", "action": "toggle_music", "type": "toggle", "value": "music"},
+    {"text": "Звуки: ON", "action": "toggle_sound", "type": "toggle", "value": "sound"},
+    {"text": "Громкость: 70%", "action": "volume", "type": "slider", "value": "volume"},
+    {"text": "Сложность: Нормально", "action": "difficulty", "type": "selector",
+     "options": ["Легко", "Нормально", "Трудно"], "value": "difficulty"},
+    {"text": "Назад", "action": "back"}
+]
+
+help_text = [
+    "Правила игры:",
+    "- Используйте для передвижения стрелки на клавиатуре: ← →",
+    "- Разбей все преграды, чтобы выиграть",
+    "- Не дайте снаряду упасть",
+    "- Нажмите кнопку ESC для паузы",
+    "",
+    "Элементы управления:",
+    "- ESC: Пауза/Продолжение игры",
+    "- F1: Показать инструкцию по работе"
+]
 
 # Звезды
 class Star:
@@ -41,8 +91,8 @@ class Star:
         self.x = random.randint(0, WIDTH)
         self.y = random.randint(0, HEIGHT)
         self.radius = random.choice([1, 1, 2])
-        self.speed = random.uniform(0.5, 1.5)
-        self.color = (random.randint(150, 255),) * 3
+        self.speed = random.uniform(0.5, 2.5)
+        self.color = (random.randint(200, 255),) * 3
 
     def move(self):
         self.y += self.speed
@@ -52,66 +102,38 @@ class Star:
 
     def draw(self, surface):
         pygame.draw.circle(surface, self.color, (int(self.x), int(self.y)), self.radius)
-
+        if self.radius > 1:
+            highlight = min(255, self.color[0] + 40)
+            pygame.draw.circle(surface, (highlight, highlight, highlight),
+                             (int(self.x) - 1, int(self.y) - 1), 1)
 
 stars = [Star() for _ in range(100)]
-
-# Настройки игры у
-game_settings = {
-    "music": True,
-    "sound": True,
-    "volume": 0.7,
-    "difficulty": "normal"
-}
 
 # Статистика
 stats_file = "stats.json"
 
-
 def load_stats():
-    if os.path.exists(stats_file):
-        with open(stats_file, "r") as f:
-            return json.load(f)
-    return {"Easy": {"wins": 0, "losses": 0}, "Normal": {"wins": 0, "losses": 0}, "Hard": {"wins": 0, "losses": 0}}
+    default_stats = {
+        "Легко": {"побед": 0, "поражений": 0},
+        "Нормально": {"побед": 0, "поражений": 0},
+        "Трудно": {"побед": 0, "поражений": 0},
+        "Общий счёт": 0
+    }
 
+    if os.path.exists(stats_file):
+        with open(stats_file, "r", encoding="utf-8") as f:
+            loaded = json.load(f)
+            for key, value in default_stats.items():
+                if key not in loaded:
+                    loaded[key] = value
+            return loaded
+    return default_stats
 
 def save_stats(stats):
     with open(stats_file, "w") as f:
         json.dump(stats, f, indent=2)
 
-
 stats = load_stats()
-
-# Меню
-main_menu_buttons = [
-    {"text": "Start Game", "action": "start"},
-    {"text": "Settings", "action": "settings"},
-    {"text": "Stats", "action": "stats"},
-    {"text": "Help", "action": "help"},
-    {"text": "Quit", "action": "quit"}
-]
-
-settings_buttons = [
-    {"text": "Music: ON", "action": "toggle_music", "type": "toggle", "value": "music"},
-    {"text": "Sounds: ON", "action": "toggle_sound", "type": "toggle", "value": "sound"},
-    {"text": "Volume: 70%", "action": "volume", "type": "slider", "value": "volume"},
-    {"text": "Difficulty: Normal", "action": "difficulty", "type": "selector",
-     "options": ["Easy", "Normal", "Hard"], "value": "difficulty"},
-    {"text": "Back", "action": "back"}
-]
-
-help_text = [
-    "HOW TO PLAY:",
-    "- Use LEFT/RIGHT arrows to move paddle",
-    "- Destroy all blocks to win",
-    "- Don't let the ball fall down",
-    "- Press ESC to pause game",
-    "",
-    "CONTROLS:",
-    "- ESC: Pause/Resume",
-    "- F1: Show this help"
-]
-
 
 def draw_button(btn, x, y, width=300, height=50, is_hovered=False, is_active=False):
     btn_rect = pygame.Rect(x, y, width, height)
@@ -123,7 +145,6 @@ def draw_button(btn, x, y, width=300, height=50, is_hovered=False, is_active=Fal
                         btn_rect.y + (height - label.get_height()) // 2))
     return btn_rect
 
-
 def draw_slider(x, y, width, value):
     track_rect = pygame.Rect(x, y, width, 10)
     thumb_pos = x + int(width * value)
@@ -134,7 +155,6 @@ def draw_slider(x, y, width, value):
     pygame.draw.rect(screen, WHITE, thumb_rect, 2, border_radius=5)
     return thumb_rect
 
-
 def main_menu():
     while True:
         screen.fill(BG_COLOR)
@@ -142,22 +162,18 @@ def main_menu():
         for star in stars:
             star.move()
             star.draw(screen)
-
-        title = title_font.render("StarBreaker", True, WHITE)
-        screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 80))
-
-        # Показываем текущий уровень сложности
-        diff_label = font.render(f"Difficulty: {game_settings['difficulty'].capitalize()}", True, WHITE)
-        screen.blit(diff_label, (WIDTH - diff_label.get_width() - 20, 20))
+        title = title_font.render("Звездный удар", True, WHITE)
+        screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 100))
 
         mouse_pos = pygame.mouse.get_pos()
+        current_hovered = None
+
         for i, btn in enumerate(main_menu_buttons):
             is_hovered = "rect" in btn and btn["rect"].collidepoint(mouse_pos)
-            btn_rect = draw_button(btn, WIDTH // 2 - 150, 150 + i * 70, 300, 50, is_hovered)
+            btn_rect = draw_button(btn, WIDTH // 2 - 150, 200 + i * 70, 300, 50, is_hovered)
             btn["rect"] = btn_rect
 
         pygame.display.flip()
-
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -165,6 +181,8 @@ def main_menu():
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 for btn in main_menu_buttons:
                     if "rect" in btn and btn["rect"].collidepoint(event.pos):
+                        if game_settings["sound"]:
+                            hover_sound.play()
                         return btn["action"]
         clock.tick(FPS)
 
@@ -179,7 +197,7 @@ def settings_menu():
             star.move()
             star.draw(screen)
 
-        title = title_font.render("Settings", True, WHITE)
+        title = title_font.render("Настройки", True, WHITE)
         screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 80))
 
         mouse_pos = pygame.mouse.get_pos()
@@ -188,11 +206,12 @@ def settings_menu():
         for i, btn in enumerate(settings_buttons):
             y_pos = 180 + i * 70
             if btn.get("type") == "toggle":
-                btn["text"] = f"{btn['value'].capitalize()}: {'ON' if game_settings[btn['value']] else 'OFF'}"
+                btn["text"] = f"{value_labels[btn['value']]}: {'ON' if game_settings[btn['value']] else 'OFF'}"
+
                 btn["rect"] = draw_button(btn, WIDTH // 2 - 150, y_pos, 300, 50,
-                                          btn.get("rect", pygame.Rect(0, 0, 0, 0)).collidepoint(mouse_pos))
+                                           btn.get("rect", pygame.Rect(0, 0, 0, 0)).collidepoint(mouse_pos))
             elif btn.get("type") == "slider":
-                btn["text"] = f"Volume: {int(game_settings['volume'] * 100)}%"
+                btn["text"] = f"Громкость: {int(game_settings['volume'] * 100)}%"
                 label = font.render(btn["text"], True, WHITE)
                 screen.blit(label, (WIDTH // 2 - label.get_width() // 2, y_pos - 10))
                 slider_rect = draw_slider(WIDTH // 2 - 150, y_pos + 20, 300, game_settings["volume"])
@@ -203,16 +222,18 @@ def settings_menu():
                 elif dragging == btn["value"] and mouse_pressed:
                     new_value = (mouse_pos[0] - (WIDTH // 2 - 150)) / 300
                     game_settings["volume"] = max(0, min(1, new_value))
+                    pygame.mixer.music.set_volume(game_settings["volume"])
+                    for sound in [bounce_sound, break_sound, hover_sound, lose_sound, win_sound, fail_sound]:
+                        sound.set_volume(game_settings["volume"])
                 elif not mouse_pressed:
                     dragging = None
             elif btn.get("type") == "selector":
-                btn["text"] = f"Difficulty: {game_settings['difficulty'].capitalize()}"
+                btn["text"] = f"Сложность: {game_settings['difficulty']}"
                 btn["rect"] = draw_button(btn, WIDTH // 2 - 150, y_pos, 300, 50,
-                                          btn.get("rect", pygame.Rect(0, 0, 0, 0)).collidepoint(mouse_pos))
+                                           btn.get("rect", pygame.Rect(0, 0, 0, 0)).collidepoint(mouse_pos))
             else:
                 btn["rect"] = draw_button(btn, WIDTH // 2 - 150, y_pos, 300, 50,
-                                          btn.get("rect", pygame.Rect(0, 0, 0, 0)).collidepoint(mouse_pos))
-
+                                           btn.get("rect", pygame.Rect(0, 0, 0, 0)).collidepoint(mouse_pos))
         pygame.display.flip()
 
         for event in pygame.event.get():
@@ -222,6 +243,8 @@ def settings_menu():
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 for btn in settings_buttons:
                     if "rect" in btn and btn["rect"].collidepoint(event.pos):
+                        if game_settings["sound"]:
+                            hover_sound.play()
                         if btn["action"] == "back":
                             return
                         elif btn["action"] == "toggle_music":
@@ -233,12 +256,11 @@ def settings_menu():
                         elif btn["action"] == "toggle_sound":
                             game_settings["sound"] = not game_settings["sound"]
                         elif btn["action"] == "difficulty":
-                            diffs = ["easy", "normal", "hard"]
-                            current = diffs.index(game_settings["difficulty"])
-                            game_settings["difficulty"] = diffs[(current + 1) % len(diffs)]
+                            difficulties = ["Легко", "Нормально", "Трудно"]
+                            current = difficulties.index(game_settings["difficulty"])
+                            game_settings["difficulty"] = difficulties[(current + 1) % len(difficulties)]
 
         clock.tick(FPS)
-
 
 def stats_menu():
     while True:
@@ -248,20 +270,26 @@ def stats_menu():
             star.move()
             star.draw(screen)
 
-        title = title_font.render("STATS", True, WHITE)
+        title = title_font.render("СТАТИСТИКА", True, WHITE)
         screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 80))
 
         y = 180
-        for level in ["Easy", "Normal", "Hard"]:
-            line = f"{level}: Wins: {stats[level.lower()]['wins']} | Losses: {stats[level.lower()]['losses']}"
+        for level in ["Легко", "Нормально", "Трудно"]:
+            wins = stats.get(level, {}).get("побед", 0)
+            losses = stats.get(level, {}).get("поражений", 0)
+            line = f"{level}: победы: {wins} | поражения: {losses}"
             line_surf = font.render(line, True, WHITE)
             screen.blit(line_surf, (WIDTH // 2 - line_surf.get_width() // 2, y))
             y += 50
 
+        line = f"Общий счёт: {stats.get('Общий счёт', 0)}"
+        line_surf = font.render(line, True, WHITE)
+        screen.blit(line_surf, (WIDTH // 2 - line_surf.get_width() // 2, y))
+
         back_btn = {"text": "Back", "action": "back"}
         mouse_pos = pygame.mouse.get_pos()
-        back_btn["rect"] = draw_button(back_btn, WIDTH // 2 - 150, HEIGHT - 100, 300, 50,
-                                       back_btn.get("rect", pygame.Rect(0, 0, 0, 0)).collidepoint(mouse_pos))
+        is_hovered = pygame.Rect(WIDTH // 2 - 150, HEIGHT - 100, 300, 50).collidepoint(mouse_pos)
+        back_btn["rect"] = draw_button(back_btn, WIDTH // 2 - 150, HEIGHT - 100, 300, 50, is_hovered)
 
         pygame.display.flip()
 
@@ -286,17 +314,17 @@ def help_menu():
             star.move()
             star.draw(screen)
 
-        title = title_font.render("Help", True, WHITE)
+        title = title_font.render("Помощь", True, WHITE)
         screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 80))
 
         for i, line in enumerate(help_text):
             text = font.render(line, True, WHITE)
             screen.blit(text, (WIDTH // 2 - text.get_width() // 2, 180 + i * 30))
 
-        back_btn = {"text": "Back", "action": "back"}
         mouse_pos = pygame.mouse.get_pos()
-        back_btn["rect"] = draw_button(back_btn, WIDTH // 2 - 150, HEIGHT - 100, 300, 50,
-                                       back_btn.get("rect", pygame.Rect(0, 0, 0, 0)).collidepoint(mouse_pos))
+        back_btn = {"text": "Назад", "action": "back"}
+        is_hovered = pygame.Rect(WIDTH // 2 - 150, HEIGHT - 100, 300, 50).collidepoint(mouse_pos)
+        back_btn["rect"] = draw_button(back_btn, WIDTH // 2 - 150, HEIGHT - 100, 300, 50, is_hovered)
 
         pygame.display.flip()
 
@@ -305,29 +333,30 @@ def help_menu():
                 pygame.quit()
                 sys.exit()
             elif event.type == pygame.MOUSEBUTTONDOWN:
+                if game_settings["sound"]:
+                    hover_sound.play()
                 if "rect" in back_btn and back_btn["rect"].collidepoint(event.pos):
                     return
 
         clock.tick(FPS)
 
-
-# Ракеты (временно — цветные прямоугольники)
+# Ракеты
 rocket_imgs = [
-    pygame.Surface((100, 30)),  # Easy - широкая
-    pygame.Surface((80, 25)),  # Normal
-    pygame.Surface((60, 20)),  # Hard - узкая
+    pygame.image.load("rocket_1.png").convert_alpha(),
+    pygame.image.load("rocket_2.png").convert_alpha(),
+    pygame.image.load("rocket_3.png").convert_alpha()
 ]
-rocket_imgs[0].fill((255, 100, 100))  # красная
-rocket_imgs[1].fill((100, 255, 100))  # зелёная
-rocket_imgs[2].fill((100, 100, 255))  # синяя
 
-selected_rocket_img = rocket_imgs[1]  # по умолчанию
+rocket_imgs[0] = pygame.transform.scale(rocket_imgs[0], (120, 120))
+rocket_imgs[1] = pygame.transform.scale(rocket_imgs[1], (120, 120))
+rocket_imgs[2] = pygame.transform.scale(rocket_imgs[2], (120, 120))
 
+selected_rocket_img = rocket_imgs[1]
 
 def select_rocket():
     global selected_rocket_img
     selecting = True
-    selected = 0
+    rocket_rects = []
 
     while selecting:
         screen.fill(BG_COLOR)
@@ -336,17 +365,23 @@ def select_rocket():
             star.move()
             star.draw(screen)
 
-        title = font.render("SELECT YOUR ROCKET", True, WHITE)
+        title = font.render("ВЫБЕРИТЕ РАКЕТУ", True, WHITE)
         screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 80))
 
+        rocket_rects = []
         for i, rocket in enumerate(rocket_imgs):
-            x = WIDTH // 2 - 150 + i * 100
+            x = WIDTH // 2 - 210 + i * 140
             y = HEIGHT // 2
-            border_color = (255, 255, 0) if i == selected else (100, 100, 100)
+            rocket_rect = pygame.Rect(x, y, rocket.get_width(), rocket.get_height())
+            rocket_rects.append(rocket_rect)
+
+            mouse_pos = pygame.mouse.get_pos()
+            border_color = (255, 255, 0) if rocket_rect.collidepoint(mouse_pos) else (100, 100, 100)
+
             pygame.draw.rect(screen, border_color, (x - 5, y - 5, rocket.get_width() + 10, rocket.get_height() + 10), 2)
             screen.blit(rocket, (x, y))
 
-        instruction = font.render("Use LEFT / RIGHT, Enter to select", True, WHITE)
+        instruction = font.render("Нажмите мышкой на любой понравивишийся скин", True, WHITE)
         screen.blit(instruction, (WIDTH // 2 - instruction.get_width() // 2, HEIGHT - 80))
 
         pygame.display.flip()
@@ -355,23 +390,19 @@ def select_rocket():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LEFT:
-                    selected = (selected - 1) % 3
-                elif event.key == pygame.K_RIGHT:
-                    selected = (selected + 1) % 3
-                elif event.key == pygame.K_RETURN:
-                    selected_rocket_img = rocket_imgs[selected]
-                    selecting = False
-                elif event.key == pygame.K_ESCAPE:
-                    return "back"
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    mouse_pos = pygame.mouse.get_pos()
+                    for i, rect in enumerate(rocket_rects):
+                        if rect.collidepoint(mouse_pos):
+                            selected_rocket_img = rocket_imgs[i]
+                            selecting = False
+                            return
 
         clock.tick(60)
-    return "continue"
-
 
 def countdown():
-    for i in [3, 2, 1, "START"]:
+    for i in [3, 2, 1, "Поехали!!"]:
         screen.fill(BG_COLOR)
         screen.blit(galaxy_img, galaxy_pos)
         for star in stars:
@@ -383,40 +414,33 @@ def countdown():
         pygame.display.flip()
         pygame.time.wait(1000)
 
-
 def apply_difficulty():
-    global ball_speed, paddle_speed
+    global ball_speed, paddle_speed, base_ball_speed
 
-    if game_settings["difficulty"] == "easy":
-        ball_speed = [3, -3]
+    if game_settings["difficulty"] == "Легко":
+        base_ball_speed = [3, -3]
         paddle_speed = 6
-    elif game_settings["difficulty"] == "normal":
-        ball_speed = [5, -5]
+    elif game_settings["difficulty"] == "Нормально":
+        base_ball_speed = [5, -5]
         paddle_speed = 8
-    elif game_settings["difficulty"] == "hard":
-        ball_speed = [7, -7]
+    elif game_settings["difficulty"] == "Трудно":
+        base_ball_speed = [7, -7]
         paddle_speed = 10
 
+    ball_speed = base_ball_speed.copy()
 
 def game_loop():
     global stats
     global ball_speed
 
-    # Применяем настройки сложности
     apply_difficulty()
 
-    # Выбор ракеты
-    rocket_result = select_rocket()
-    if rocket_result == "back":
-        return
-
-    # Обратный отсчет
+    select_rocket()
     countdown()
 
-    # pygame.mixer.music.load("game_music.mp3")
-    # pygame.mixer.music.play(-1)
+    pygame.mixer.music.load("game_music.mp3")
+    pygame.mixer.music.play(-1)
 
-    # Инициализация игры
     paddle = selected_rocket_img.get_rect(midbottom=(WIDTH // 2, HEIGHT - 10))
     ball = pygame.Rect(WIDTH // 2, HEIGHT // 2, 15, 15)
     blocks = [pygame.Rect(col * (WIDTH // 10) + 5, row * 30 + 5, 70, 20)
@@ -445,70 +469,71 @@ def game_loop():
                     help_menu()
 
         if paused:
-            pause_text = font.render("PAUSED - Press ESC to resume", True, WHITE)
+            pause_text = font.render("ПАУЗА - Нажмите ESC для продолжения", True, WHITE)
             screen.blit(pause_text, (WIDTH // 2 - pause_text.get_width() // 2, HEIGHT // 2))
             pygame.display.flip()
             continue
 
-        # Управление платформой
         keys = pygame.key.get_pressed()
         if keys[pygame.K_LEFT] and paddle.left > 0:
             paddle.x -= paddle_speed
         if keys[pygame.K_RIGHT] and paddle.right < WIDTH:
             paddle.x += paddle_speed
 
-        # Движение мяча
         ball.x += ball_speed[0]
         ball.y += ball_speed[1]
 
-        # Отскок от стен
         if ball.left <= 0 or ball.right >= WIDTH:
             ball_speed[0] *= -1
         if ball.top <= 0:
             ball_speed[1] *= -1
 
-        # Проверка на проигрыш
         if ball.bottom >= HEIGHT:
             lives -= 1
             ball.x, ball.y = WIDTH // 2, HEIGHT // 2
-            ball_speed = [5 * random.choice([-1, 1]), -5]
+            ball_speed = [base_ball_speed[0] * random.choice([-1, 1]), base_ball_speed[1]]
 
-        # Отскок от платформы
         if ball.colliderect(paddle):
             ball_speed[1] *= -1
+            if game_settings["sound"]:
+                bounce_sound.play()
 
-        # Проверка столкновений с блоками
         for block in blocks[:]:
             if ball.colliderect(block):
                 blocks.remove(block)
                 ball_speed[1] *= -1
                 score += 10
+                if game_settings["sound"]:
+                    break_sound.play()
                 break
 
-        # Отрисовка объектов
         screen.blit(selected_rocket_img, paddle)
         pygame.draw.ellipse(screen, BALL_COLOR, ball)
         for block in blocks:
             pygame.draw.rect(screen, BLOCK_COLOR, block)
 
-        # Отрисовка счета и жизней
-        screen.blit(font.render(f"Score: {score}", True, WHITE), (10, 10))
-        screen.blit(font.render(f"Lives: {lives}", True, WHITE), (WIDTH - 120, 10))
+        screen.blit(font.render(f"Очки: {score}", True, WHITE), (10, 10))
+        screen.blit(font.render(f"Жизни: {lives}", True, WHITE), (WIDTH - 120, 10))
 
-        # Проверка условий окончания игры
         if lives <= 0:
-            stats[game_settings["difficulty"]]["losses"] += 1
+            if game_settings["sound"]:
+                fail_sound.play()
+            stats[game_settings["difficulty"]]["поражений"] += 1
+            stats["Общий счёт"] += score  # ← добавили
             save_stats(stats)
-            end_text = "GAME OVER"
+            end_text = "ИГРА ОКОНЧЕНА"
             msg = font.render(end_text, True, WHITE)
             screen.blit(msg, (WIDTH // 2 - msg.get_width() // 2, HEIGHT // 2))
             pygame.display.flip()
             pygame.time.wait(3000)
             return
         elif not blocks:
-            stats[game_settings["difficulty"]]["wins"] += 1
+            if game_settings["sound"]:
+                win_sound.play()
+            stats[game_settings["difficulty"]]["побед"] += 1
+            stats["Общий счёт"] += score  # ← добавили
             save_stats(stats)
-            end_text = "YOU WIN!"
+            end_text = "ПОБЕДА!"
             msg = font.render(end_text, True, WHITE)
             screen.blit(msg, (WIDTH // 2 - msg.get_width() // 2, HEIGHT // 2))
             pygame.display.flip()
@@ -516,7 +541,6 @@ def game_loop():
             return
 
         pygame.display.flip()
-
 
 def main():
     while True:
@@ -532,7 +556,6 @@ def main():
         elif action == "quit":
             pygame.quit()
             return
-
 
 if __name__ == "__main__":
     main()
