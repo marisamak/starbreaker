@@ -17,6 +17,9 @@ HOVER_COLOR = (80, 80, 120)
 ACTIVE_COLOR = (120, 120, 180)
 
 pygame.init()
+
+pygame.mixer.init()
+
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("StarBreaker")
 clock = pygame.time.Clock()
