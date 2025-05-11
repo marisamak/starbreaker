@@ -18,7 +18,8 @@ ACTIVE_COLOR = (120, 120, 180)
 
 pygame.init()
 
-pygame.mixer.init()
+pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=512, allowedchanges=pygame.AUDIO_ALLOW_ANY_CHANGE)
+pygame.time.delay(100)
 
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("StarBreaker")
@@ -291,7 +292,7 @@ def stats_menu():
         line_surf = font.render(line, True, WHITE)
         screen.blit(line_surf, (WIDTH // 2 - line_surf.get_width() // 2, y))
 
-        back_btn = {"text": "Back", "action": "back"}
+        back_btn = {"text": "Назад", "action": "back"}
         mouse_pos = pygame.mouse.get_pos()
         is_hovered = pygame.Rect(WIDTH // 2 - 150, HEIGHT - 100, 300, 50).collidepoint(mouse_pos)
         back_btn["rect"] = draw_button(back_btn, WIDTH // 2 - 150, HEIGHT - 100, 300, 50, is_hovered)
