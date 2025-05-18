@@ -18,7 +18,7 @@ ACTIVE_COLOR = (120, 120, 180)
 
 pygame.init()
 
-pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=512, allowedchanges=pygame.AUDIO_ALLOW_ANY_CHANGE)
+pygame.mixer.init()
 pygame.time.delay(100)
 
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
